@@ -1,2 +1,2 @@
 # oracle2
-Study Database
+Database study & practice
