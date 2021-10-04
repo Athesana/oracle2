@@ -55,7 +55,7 @@ FROM EMPLOYEE
 GROUP BY SUBSTR(EMP_NO, 8, 1) -- GROUP BY 절에는 컬럼명, 계산식, 연산(함수호출) 구문이 올 수 있다. (단, 컬럼 순번, 별칭은 사용할 수 없다.)
 ORDER BY "성별";
 
--- 여러 컬럼을 제시해서 그룹 기준을 선정
+-- 여러 컬럼을 제시해서 그룹 기준을 선정 (~부서의 ~직급인 사람들끼리 묶는다는 뜻)
 SELECT DEPT_CODE AS "부서 코드", 
        JOB_CODE AS "직급 코드", 
        COUNT(*) AS "직원수", 
@@ -77,14 +77,14 @@ ORDER BY DEPT_CODE;
        HAVING    -- 4 : 그룹에 대한 조건식
        ORDER BY  -- 6 : 컬럼명 | 별칭 | 컬럼 순번 [ASC|DESC][NULLS FIRST|NULLS LAST], 행의 순서를 어떻게 보여줄지 정렬해준다.
 */
--- 각 부서별 급여가 300만원 이상인 직원의 평균 급여 조회
-SELECT DEPT_CODE, AVG(SALARY)
-FROM EMPLOYEE
+-- 각 부서별 급여가 300만원 이상인 직원의 평균 급여 조회 (그룹 함수 사용하기 전에 WHERE 절을 통해 급여가 300만원 이상인 직원들 데이터를 가져오고 그 데이터로 그룹핑을 한다. 그리고 SALARY를 평균을 내본다.)
+SELECT DEPT_CODE, AVG(NVL(SALARY,0))
+FROM EMPLOYEE 
 WHERE SALARY >= 3000000
 GROUP BY DEPT_CODE
 ORDER BY DEPT_CODE;
-
--- 긱 부서별 평균 급여가 300만원 이상인 부서들만 조회
+ 
+-- 긱 부서별 평균 급여가 300만원 이상인 부서들만 조회 (각 부서별 평균 SALARY를 구하고 그 평균이 300만원 이상인 부서들만 조회하겠다.)
 SELECT DEPT_CODE, FLOOR(AVG(NVL(SALARY,0)))
 FROM EMPLOYEE
 --- WHERE FLOOR(AVG(NVL(SALARY, 0))) >= 3000000 -- 에러 발생!
@@ -103,7 +103,7 @@ ORDER BY JOB_CODE;
 SELECT DEPT_CODE, COUNT(BONUS) -- COUNT(BONUS)는 보너스를 받는 사람의 숫자가 나온다.
 FROM EMPLOYEE
 GROUP BY DEPT_CODE
-HAVING COUNT(BONUS) = 0 -- NULL이면 카운팅을 하지 않으니까 COUNT(BONUS) 했을 때 0이라는거는 죄다 NULL 값이라는 뜻
+HAVING COUNT(BONUS) = 0 -- NULL이면 카운팅을 하지 않으니까 COUNT(BONUS) 했을 때 0이라는거는 부서별로 묶인 사원들이 보너스를 받는지 카운팅 해봤더니 0이다, 즉, 죄다 NULL 값이라는 뜻
 -- HAVING COUNT(BONUS) != 0 보너스를 받는 사람이 있는 부서 조회
 ORDER BY DEPT_CODE;
 
@@ -136,13 +136,13 @@ FROM EMPLOYEE
 GROUP BY DEPT_CODE, JOB_CODE
 ORDER BY DEPT_CODE;
 
--- ROLLUP(컬럽1, 컬럼2, ...) -> 컬럼 1을 가지고 중간 집계를 내는 함수
+-- 1. ROLLUP(컬럼1, 컬럼2, ...) -> 컬럼 1을 가지고 중간 집계를 내는 함수
 SELECT DEPT_CODE, JOB_CODE, SUM(SALARY)
 FROM EMPLOYEE
 GROUP BY ROLLUP(DEPT_CODE, JOB_CODE)
 ORDER BY DEPT_CODE;
 
--- CUBE(컬럽1, 컬럼2, ...) -> 컬럼 1을 가지고 중간 집계를 내고, 컬럼 2를 가지고도 중간집계를 내고, 전달되는 컬럼 모두를 집계한다.
+-- 2. CUBE(컬럼1, 컬럼2, ...) -> 컬럼 1을 가지고 중간 집계를 내고, 컬럼 2를 가지고도 중간집계를 내고, 전달되는 컬럼 모두를 집계한다.
 SELECT DEPT_CODE, JOB_CODE, SUM(SALARY)
 FROM EMPLOYEE
 GROUP BY CUBE(DEPT_CODE, JOB_CODE)
@@ -190,17 +190,17 @@ SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE
 WHERE SALARY > 3000000; -- 8명 조회
 
--- 1. UNION
--- EMPLOYEE 테이블에서 부서 코드가 D5인 사원 또는 급여가 300만원 초과인 사원 조회
+-- 1. UNION (반드시 컬럼 갯수를 맞춰줘야한다.)
+-- EMPLOYEE 테이블에서 부서 코드가 D5인 사원 '또는' 급여가 300만원 초과인 사원 조회
 SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE
-WHERE DEPT_CODE = '5'
+WHERE DEPT_CODE = 'D5'
 
 UNION
 
 SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE
-WHERE SALARY >3000000;  -- 8명 조회
+WHERE SALARY > 3000000;  -- 12명 조회
 
 -- 위 쿼리문 대신에 WHERE 절에 OR를 사용해서 처리 가능
 SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
@@ -219,7 +219,7 @@ FROM EMPLOYEE
 WHERE SALARY > 3000000;  -- 14명 조회
 
 -- 3. INTERSECT 
--- EMPLOYEE 테이블에서 부서 코드가 D5 이면서 급여가 300만원 초과인 사원 조회
+-- EMPLOYEE 테이블에서 부서 코드가 D5 '이면서' 급여가 300만원 초과인 사원 조회
 SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE
 WHERE DEPT_CODE = 'D5'
@@ -264,18 +264,20 @@ FROM EMPLOYEE
 GROUP BY DEPT_CODE
 
 UNION ALL
+
 -- 직급별 사원수
 SELECT JOB_CODE, COUNT(*)
 FROM EMPLOYEE
 GROUP BY JOB_CODE;
 
+-- GROUPING SETS을 이용해보자.
 SELECT DEPT_CODE, JOB_CODE, COUNT(*)
 FROM EMPLOYEE
 GROUP BY GROUPING SETS(DEPT_CODE, JOB_CODE);
 
 
 -----------------------
-
+-- DEPT_CODE, JOB_CODE, MANAGER_ID가 동일한 사원들의 급여 평균을 구해보자.
 SELECT DEPT_CODE, JOB_CODE, MANAGER_ID, FLOOR(AVG(NVL(SALARY,0)))
 FROM EMPLOYEE
 GROUP BY DEPT_CODE, JOB_CODE, MANAGER_ID;
