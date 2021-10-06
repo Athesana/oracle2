@@ -449,6 +449,8 @@ FROM (
 )
 WHERE ROWNUM <= 3;
 
+-- SELECT에 AVG(NVL(SALARY,0) 이라고 적으면 여기에서 컬럼은 SALARY만 있지 이 자체를 컬럼명으로 인식하지 못한다. 따라서 이렇게 적으면 에러가 나는 것
+
 -- 2-1) WITH를 이용한 방법
 WITH TOPN_SAL AS (
    SELECT NVL(DEPT_CODE, '부서없음') AS "DEPT_CODE", 
@@ -462,8 +464,32 @@ SELECT DEPT_CODE, ROUND(평균급여)
 FROM TOPN_SAL
 WHERE ROWNUM <= 3;
 
+-----------------------------------------------------------------------------------------------
+/*       
+     <RANK 함수>
+        [표현법]
+            RANK() OVER(정렬 기준) / DENSE_RANK() OVER(정렬 기준)
+            
+        RANK() OVER(정렬 기준) : 동일한 순위 이후의 등수를 동일한 인원수만큼 건너뛰고 순위를 계산한다. (ex. 공동 1위가 2명이면 그 다음 순위는 3위)
+        DENSE_RANK() OVER(정렬 기준) : 동일한 순위 이후의 등수를 무조건 1씩 증가한다. (ex. 공동 1위가 2명이면 그 다음 순위는 2위)
+        
+        - WHERE절에서 조건으로써 사용불가! 무조건 SELECT절에서만 사용 -> 인라인뷰를 활용
+*/
+-- 사원별 급여가 높은 순서대로 순위를 매겨서, 사원명, 급여 조회
+-- 공동 19위 2명 뒤에 순위는 21위
+SELECT RANK() OVER(ORDER BY SALARY DESC) AS "RANK", EMP_NAME, SALARY
+FROM EMPLOYEE;
 
+-- 공동 19위 2명 뒤에 순위는 20위
+SELECT DENSE_RANK() OVER(ORDER BY SALARY DESC) AS "RANK", EMP_NAME, SALARY
+FROM EMPLOYEE;
 
-
+-- 상위 5명만 조회
+SELECT RANK, EMP_NAME, SALARY
+FROM (
+    SELECT RANK() OVER(ORDER BY SALARY DESC) AS "RANK", EMP_NAME, SALARY
+    FROM EMPLOYEE
+)
+WHERE RANK <= 5;
 
 
