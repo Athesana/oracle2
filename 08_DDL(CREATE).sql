@@ -192,7 +192,7 @@ FROM USER_CONSTRAINTS UC
 JOIN USER_CONS_COLUMNS UCC USING (CONSTRAINT_NAME)
 WHERE UC.TABLE_NAME = 'MEMBER'; 
 
--- 여러 컬럼을 묶어서 UNIQUE 제약 조건이 설정되어 있으면 제약 조건이 설정되어 있는 컬럼 값이 모두 중복되는 경우에만 오류가 발생한다.
+-- 여러 컬럼을 묶어서 UNIQUE 제약 조건이 설정되어 있으면 제약 조건이 설정되어 있는 컬럼 값이 "모두 중복되는 경우에만" 오류가 발생한다.
 INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '아무개', DEFAULT);
 INSERT INTO MEMBER VALUES(2, 'USER1', '1234', '아무개', DEFAULT); -- INSERT 가능
 INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '아무개', DEFAULT); -- NO는 같지만 ID가 달라서 INSERT 가능
@@ -229,7 +229,7 @@ CREATE TABLE MEMBER (
 
 DESC MEMBER;
 
--- 성별, 나이에 유효한 값이 아닌 값들도 INSERT가 되어버림
+-- 성별, 나이에 유효한 값이 아닌 값들도 INSERT가 되어버림 (프로그램 논리적 오류 발생)
 INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '아무개', '남', 25, DEFAULT);
 INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '춘향이', '여', 101,  DEFAULT);
 INSERT INTO MEMBER VALUES(3, 'USER3', '1234', '이산아', '강', 30,  DEFAULT);
@@ -258,7 +258,7 @@ INSERT INTO MEMBER VALUES(4, 'USER4', '1234', '홍길동', '남', -30,  DEFAULT)
 
 /*
     <PRIMARY KEY>
-        테이블에서 한 행의 정보를 식별하기 위해 사용할 컬럼에 부여하는 제약조건이다.
+        테이블에서 "한 행의 정보를 식별"하기 위해 사용할 컬럼에 부여하는 제약조건이다.
         각 행들을 구분할 수 있는 식별자의 역할(회원번호, 부서 코드, 직급 코드, ... 한 행을 구분할 수 있는 식별자 역할)
         PRIMARY KEY 제약조건을 설정하면 자동으로 해당 컬럼에 NOT NULL + UNIQUE(중복제거) 제약 조건이 설정된다.
         한 테이블에 한 개만 설정할 수 있다. (단, 한 개 이상의 컬럼을 묶어서 PRIMARY KEY로 제약조건을 설정할 수 있다.)
@@ -274,7 +274,7 @@ CREATE TABLE MEMBER (
     GENDER CHAR(3) CHECK(GENDER IN('남','여')),
     AGE NUMBER CHECK(AGE > 0),
     MEMBER_DATE DATE DEFAULT SYSDATE,
-    -- CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO),
+    -- CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO), -- 테이블 레벨에서 설정할 때 
     CONSTRAINT MEMBER_MEMBER_ID_UQ UNIQUE(MEMBER_ID)
 );
 
@@ -298,21 +298,23 @@ CREATE TABLE MEMBER (
     MEMBER_DATE DATE DEFAULT SYSDATE,
     CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO, MEMBER_ID) -- 컬럼을 묶어서 하나의 기본 키를 설정 -> 복합키라고 한다.
 );
+-- PRIMARY KEY로 묶은 MEMBER_NO, MEMBER_ID 2개가 동시에 다 같아야 한다.
 
 INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '아무개', '남', 25, DEFAULT);
 INSERT INTO MEMBER VALUES(1, 'USER2', '1234', '춘향이', '여', 20,  DEFAULT); -- 복합키로 묶인 것 중에 둘 중 하나라도 다르면 INSERT 가능
 INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '이산아', '남', 30,  DEFAULT); -- 복합키로 묶인 것 중에 둘 중 하나라도 다르면 INSERT 가능
 -- 회원번호, 아이디가 세트로 동일한 값이 이미 존재하기 때문에 에러가 발생한다.
-INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '유관순', '여', 15,  DEFAULT); -- 제약 조건 위배
+INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '유관순', '여', 15,  DEFAULT); -- 제약 조건 위배, 기본 키 중복으로 오류
 -- 기본 키로 설정된 컬럼은 NULL 값이 있으면 에러가 발생한다.
-INSERT INTO MEMBER VALUES(NULL, 'USER5', '1234', '홍길동', '남', 25,  DEFAULT); -- 제약 조건 위배
+INSERT INTO MEMBER VALUES(NULL, 'USER5', '1234', '홍길동', '남', 25,  DEFAULT); -- 제약 조건 위배, 기본 키가 NULL 이므로 오류
 
 SELECT * FROM MEMBER;
 
+DROP TABLE MEMBER;
 
 /*
-    <FOREIGN KEY(외래 키) 제약조건>
-        다른 테이블에 존재하는 값만을 가져야 하는 컬럼에 부여하는 제약조건이다. (단, NULL 값도 가질 수 있다.)
+    <FOREIGN KEY(참조키, 외래 키) 제약조건>
+        다른 테이블에 존재하는 값만을 가져야 하는 컬럼에 부여하는 제약조건이다. (단, NULL 값도 가질 수 있다.) >> 360행 실습
         즉, 참조된 다른 테이블이 제공하는 값만 기록할 수 있다. (FOREIGN KEY 제약 조건에 의해서 테이블 간에 관계가 형성된다.)
         참조할테이블명 = 부모테이블 (기본키 명시 안해도 부모 테이블의 PRIMARY 키랑 자동으로 연결된다.)
         
@@ -322,6 +324,13 @@ SELECT * FROM MEMBER;
             
             2) 테이블 레벨
                 [CONSTRAINT 제약조건명] FOREIGN KEY(컬럼명) REFERENCES 참조할테이블명 [(기본 키)] [삭제룰]
+                
+        [삭제룰]
+            부모 테이블의 데이터가 삭제되었을 때 옵션을 지정해 놓을 수 있다.
+            1) ON DELETE RESTRICT : 자식 테이블의 참조 키가 부모 테이블의 키 값을 참조하는 경우 상위 행을 삭제할 수 없다. (기본적으로 적용되는 옵션)
+            2) ON DELETE SET NULL : 부모 테이블의 데이터가 삭제 시 참조하고 있는 자식 테이블의 컬럼 값이 NULL로 변경된다.
+            3) ON DELETE CASCADE : 부모 테이블의 데이터가 삭제 시 참조하고 있는 자식 테이블의 컬럼 값이 존재하는 행 전체가 삭제된다.
+            
 */
 -- "회원 등급"에 대한 데이터를 보관하는 테이블 (부모 테이블을 만들어보자)
 CREATE TABLE MEMBER_GRADE (
@@ -329,6 +338,7 @@ CREATE TABLE MEMBER_GRADE (
     GRADE_NAME VARCHAR2(30) NOT NULL  
 );
 
+-- 부모 테이블에서 만든 데이터, 이 딱 3개만 참조키 영역에 갈 수 있다.
 INSERT INTO MEMBER_GRADE VALUES(10, '일반회원');
 INSERT INTO MEMBER_GRADE VALUES(20, '우수회원');
 INSERT INTO MEMBER_GRADE VALUES(30, '특별회원');
@@ -353,16 +363,90 @@ CREATE TABLE MEMBER (
 );
 
 INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '춘향이', '여', 20, 10, DEFAULT); -- INSERT 가능
+-- 50이라는 값이 MEMBER_GRADE 테이블 GRADE_CODE 컬럼에서 제공하는 값이 아니기 때문에 외래키 제약 조건에 위배되어 오류 발생
 INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '이산아', '남', 30, 50, DEFAULT); -- parent key not found 에러 발생
+INSERT INTO MEMBER VALUES(3, 'USER3', '1234', '홍길동', '남', 25, NULL, DEFAULT); -- INSERT 가능 -- GRADE_ID 컬럼에 NULL 사용 가능
 
+SELECT * FROM MEMBER;
 
+-- MEMBER 테이블과 MEMBER_GRADE 테이블을 조인하여 MEMBER_ID, MEMBER_NAME, GRADE_NAME 조회해보자.
+-- ANSI 구문
+SELECT MEMBER_ID, MEMBER_NAME, GRADE_NAME
+FROM MEMBER M
+LEFT OUTER JOIN MEMBER_GRADE G ON (M.GRADE_ID = G.GRADE_CODE); -- 자식 테이블의 외래키랑 부모 테이블의 기본 키를 가지고 조인한다.
 
+-- 오라클 구문
 
+-- MEMBER_GRADE 테이블에서 GRADE_CODE가 10인 데이터를 지우기
+-- 삭제 불가능, 자식 테이블의 행들 중에 10을 사용하고 있기 때문에 삭제할 수 없다.
+DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 10;
+-- 삭제 가능, 자식 테이블의 행들 중에 30을 사용하고 있는 행이 없기 때문에 삭제가 가능하다.
+DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 30;
 
+-- 변경 사항 취소, 커밋한 후에는 롤백 불가능, 위에서 데이터 삭제 작업을 취소한다. (메모리 버퍼에 임시 삭제한 데이터를 실제 테이블에 반영하지 않고 작업을 취소한다.)
+-- ROLLBACK은 TCL로써, DML에만 적용이 가능하다. DDL(예를 들어 테이블 삭제 후 롤백 가능? 놉!)은 불가능
+ROLLBACK;
 
+SELECT * FROM MEMBER_GRADE;
 
+DROP TABLE MEMBER;
 
+-- ON DELETE SET NULL 옵션이 추가된 자식 테이블 생성(참조키 지정하는 부분에 옵션 추가)
+CREATE TABLE MEMBER (
+    MEMBER_NO NUMBER CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY,
+    MEMBER_ID VARCHAR2(20) NOT NULL,
+    MEMBER_PWD VARCHAR2(20) NOT NULL,
+    MEMBER_NAME VARCHAR2(20) CONSTRAINT MEMBER_MEMBER_NAME_NN NOT NULL,
+    GENDER CHAR(3) CHECK(GENDER IN('남','여')),
+    AGE NUMBER CHECK(AGE > 0),
+    GRADE_ID NUMBER REFERENCES MEMBER_GRADE(GRADE_CODE) ON DELETE SET NULL,
+    MEMBER_DATE DATE DEFAULT SYSDATE,
+    CONSTRAINT MEMBER_MEMBER_ID_UQ UNIQUE(MEMBER_ID)
+);
 
+INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '춘향이', '여', 20, 10, DEFAULT);
+INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '홍길동', '남', 25, NULL, DEFAULT);
+
+-- 문제 없이 행이 삭제되는 것을 확인할 수 있다.
+-- 단, 자식 테이블을 조회해 보면 삭제된 행을 참조하고 있던 컬럼의 값이 (여기에서는 GRADE_ID) NULL로 변경된 것을 확인할 수 있다.
+DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 10;
+
+-- 여기서 롤백한 것은 데이터 삽입후에 커밋하지 않았기 때문에 INSERT 했던 것 까지 죄다 롤백되어버려서 SELECT * 해보면 데이터가 하나도 안 보인다.
+ROLLBACK;
+
+SELECT * FROM MEMBER_GRADE;
+SELECT * FROM MEMBER;
+
+DROP TABLE MEMBER;
+
+-- ON DELETE CASCADE 옵션이 추가된 테이블 생성
+CREATE TABLE MEMBER (
+    MEMBER_NO NUMBER CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY,
+    MEMBER_ID VARCHAR2(20) NOT NULL,
+    MEMBER_PWD VARCHAR2(20) NOT NULL,
+    MEMBER_NAME VARCHAR2(20) CONSTRAINT MEMBER_MEMBER_NAME_NN NOT NULL,
+    GENDER CHAR(3) CHECK(GENDER IN('남','여')),
+    AGE NUMBER CHECK(AGE > 0),
+    GRADE_ID NUMBER REFERENCES MEMBER_GRADE(GRADE_CODE) ON DELETE CASCADE,
+    MEMBER_DATE DATE DEFAULT SYSDATE,
+    CONSTRAINT MEMBER_MEMBER_ID_UQ UNIQUE(MEMBER_ID)
+);
+
+INSERT INTO MEMBER VALUES(1, 'USER1', '1234', '춘향이', '여', 20, 10, DEFAULT);
+INSERT INTO MEMBER VALUES(2, 'USER2', '1234', '홍길동', '남', 25, NULL, DEFAULT);
+
+COMMIT;
+
+-- 문제없이 행이 삭제되는 것을 확인할 수 있다.
+-- 단, 자식 테이블을 조회해 보면 삭제된 행을 참조하고 있던 컬럼의 행들이 모두 삭제된 것을 확인할 수 있다.
+
+DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 10;
+
+-- 가장 최근 COMMIT 한 다음 작업 내용 까지 롤백 가능하다.
+ROLLBACK;
+
+SELECT * FROM MEMBER_GRADE;
+SELECT * FROM MEMBER;
 
 -- 작성한 제약조건 확인
 SELECT CONSTRAINT_NAME, 
@@ -372,4 +456,54 @@ SELECT CONSTRAINT_NAME,
 FROM USER_CONSTRAINTS UC
 JOIN USER_CONS_COLUMNS UCC USING (CONSTRAINT_NAME)
 WHERE UC.TABLE_NAME = 'MEMBER'; 
+
+-------------------------------------------------------------------------
+/*
+    <SUBQUERY를 이용한 테이블 생성>
+        SUBQUERY를 사용해서 테이블을 생성한다.
+        컬럼명, 데이터 타입, 값이 복사되고 제약 조건은 NOT NULL만 복사된다.
+        
+        [표현법]
+            CREATE TABLE 테이블명
+            AS 서브쿼리;
+            
+*/
+-- EMPLOYEE 테이블을 복사한 새로운 테이블 생성 (컬럼, 데이터 타입, 값, NOT NULL 제약 조건을 복사)
+CREATE TABLE EMPLOYEE_COPY
+AS  SELECT *
+    FROM EMPLOYEE;
+
+SELECT * FROM EMPLOYEE_COPY;
+
+CREATE TABLE MEMBER_COPY
+AS SELECT *
+   FROM MEMBER;
+
+-- EMPLOYEE 테이블을 복사한 새로운 테이블 생성 (컬럼, 데이터 타입, 제약 조건만 복사 즉, NOT NULL 제약 조건 포함된 테이블 구조만 복사하고 값들은 복사하지 않는다.)
+CREATE TABLE EMPLOYEE_COPY2
+AS  SELECT *
+    FROM EMPLOYEE
+    WHERE 1 = 0; -- 구조만 복사하고 모든 행에 대해서 결과가 FALSE라서 만족하는 행이 하나도 없어서 데이터 값은 복사하지 않는다.
+
+CREATE TABLE MEMBER_COPY2
+AS SELECT *
+FROM MEMBER
+WHERE 2 = 1;
+
+SELECT * FROM EMPLOYEE_COPY2;
+SELECT * FROM MEMBER_COPY2;
+
+-- EMPLOYEE 테이블의 사번, 사원명, 급여, 연봉을 저장하는 테이블 서브 쿼리를 사용해서 생성
+CREATE TABLE EMPLOYEE_COPY3
+AS  SELECT EMP_ID, EMP_NAME, SALARY, SALARY * 12 AS "연봉" -- SELECT 절에 산술연산 또는 함수식이 기술된 경우 별칭을 정해줘야 테이블 생성이 가능하다.
+    FROM EMPLOYEE;
+
+SELECT * FROM EMPLOYEE_COPY3;
+
+DROP TABLE EMPLOYEE_COPY;
+DROP TABLE EMPLOYEE_COPY2;
+DROP TABLE EMPLOYEE_COPY3;
+DROP TABLE MEMBER_COPY;
+DROP TABLE MEMBER_COPY2;
+
 
