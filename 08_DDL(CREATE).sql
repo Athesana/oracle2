@@ -59,6 +59,7 @@ SELECT * FROM USER_TAB_COLUMNS WHERE TABLE_NAME = 'MEMBER';
 
 -- 테이블에 샘플 데이터추가 (INSERT)
 -- INSERT INTO 테이블명[(컬럼명, ..., 컬럼명)] VALUES (값, 값, ...);
+-- [(컬럼명, ..., 컬럼명)] 생략하게 되면 순서에 맞게 차례대로 다 기입해주어야 한다., 기입하면 기입한 순서에 맞게 VALUES 뒤에 값을 넣어준다.
 INSERT INTO MEMBER VALUES('USER1', '1234', '홍길동', '2021-10-06');
 INSERT INTO MEMBER VALUES('USER2', '1234', '김철수', SYSDATE);
 INSERT INTO MEMBER VALUES('USER2', '1234', '김철수', DEFAULT);
@@ -69,7 +70,8 @@ SELECT * FROM MEMBER;
 -- 위에서 테이블에 추가한 데이터를 실제 데이터 베이스에 반영한다. (커밋 전에는 메모리 버퍼에 임시저장 된 데이터, 이것을 실제 테이블에 반영하는 명령어)
 COMMIT;
 
-SHOW AUTOCOMMIT;
+SHOW AUTOCOMMIT; 
+-- 대부분은 AUTOCOMIIT OFF가 되어있다.
 -- SET AUTOCOMMIT ON;
 -- SET AUTOCOMMIT OFF;
 
@@ -112,7 +114,7 @@ INSERT INTO MEMBER VALUES(NULL, NULL, NULL, NULL);
 SELECT * FROM MEMBER;
 
 -- NOT NULL 제약조건을 설정한 테이블 만들기
--- NOT NULL 제약조건은 컬럼 레벨에섬나 설정이 가능하다.
+-- NOT NULL 제약조건은 컬럼 레벨에서만 설정이 가능하다.
 
 DROP TABLE MEMBER;
 
@@ -157,7 +159,9 @@ INSERT INTO MEMBER VALUES('USER1', '1234', '아무개', DEFAULT);
 INSERT INTO MEMBER VALUES('USER1', '1234', '아무개', DEFAULT);
 
 DROP TABLE MEMBER;
-
+/*
+실습 중에는 제약조건 이름 설정할 때 RULE --> 테이블명_제약조건이걸려있는컬럼명_제약조건의약자
+*/
 CREATE TABLE MEMBER (
     MEMBER_ID VARCHAR2(20) NOT NULL,
     MEMBER_PWD VARCHAR2(20) NOT NULL,
@@ -260,6 +264,7 @@ INSERT INTO MEMBER VALUES(4, 'USER4', '1234', '홍길동', '남', -30,  DEFAULT)
     <PRIMARY KEY>
         테이블에서 "한 행의 정보를 식별"하기 위해 사용할 컬럼에 부여하는 제약조건이다.
         각 행들을 구분할 수 있는 식별자의 역할(회원번호, 부서 코드, 직급 코드, ... 한 행을 구분할 수 있는 식별자 역할)
+        따라서, 값이 없어도 안되고 값이 중복되어서도 안된다.
         PRIMARY KEY 제약조건을 설정하면 자동으로 해당 컬럼에 NOT NULL + UNIQUE(중복제거) 제약 조건이 설정된다.
         한 테이블에 한 개만 설정할 수 있다. (단, 한 개 이상의 컬럼을 묶어서 PRIMARY KEY로 제약조건을 설정할 수 있다.)
         컬럼 레벨, 테이블 레벨 방식 모두 설정 가능하다.
@@ -296,7 +301,7 @@ CREATE TABLE MEMBER (
     GENDER CHAR(3) CHECK(GENDER IN('남','여')),
     AGE NUMBER CHECK(AGE > 0),
     MEMBER_DATE DATE DEFAULT SYSDATE,
-    CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO, MEMBER_ID) -- 컬럼을 묶어서 하나의 기본 키를 설정 -> 복합키라고 한다.
+    CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO, MEMBER_ID) -- 컬럼을 묶어서 하나의 기본 키를 설정 = 테이블 레벨에서만 가능 -> 복합키라고 한다.
 );
 -- PRIMARY KEY로 묶은 MEMBER_NO, MEMBER_ID 2개가 동시에 다 같아야 한다.
 
@@ -355,7 +360,7 @@ CREATE TABLE MEMBER (
     MEMBER_NAME VARCHAR2(20) CONSTRAINT MEMBER_MEMBER_NAME_NN NOT NULL,
     GENDER CHAR(3) CHECK(GENDER IN('남','여')),
     AGE NUMBER CHECK(AGE > 0),
-    GRADE_ID NUMBER REFERENCES MEMBER_GRADE(GRADE_CODE),
+    GRADE_ID NUMBER REFERENCES MEMBER_GRADE(GRADE_CODE), -- 참조키 부분
     MEMBER_DATE DATE DEFAULT SYSDATE,
     -- CONSTRAINT MEMBER_MEMBER_NO_PK PRIMARY KEY(MEMBER_NO),
     -- FOREIGN KEY(GRADE_ID) REFERENCES MEMBER_GRADE /*(GRADE_CODE)*/, -- 생략 가능(자동으로 부모 테이블의 기본 키로 연결된다.)
@@ -371,14 +376,17 @@ SELECT * FROM MEMBER;
 
 -- MEMBER 테이블과 MEMBER_GRADE 테이블을 조인하여 MEMBER_ID, MEMBER_NAME, GRADE_NAME 조회해보자.
 -- ANSI 구문
-SELECT MEMBER_ID, MEMBER_NAME, GRADE_NAME
+SELECT MEMBER_ID, 
+       MEMBER_NAME, 
+       GRADE_NAME
 FROM MEMBER M
 LEFT OUTER JOIN MEMBER_GRADE G ON (M.GRADE_ID = G.GRADE_CODE); -- 자식 테이블의 외래키랑 부모 테이블의 기본 키를 가지고 조인한다.
 
 -- 오라클 구문
 
--- MEMBER_GRADE 테이블에서 GRADE_CODE가 10인 데이터를 지우기
+-- MEMBER_GRADE 테이블(부모 테이블)에서 GRADE_CODE가 10인 데이터를 지우기
 -- 삭제 불가능, 자식 테이블의 행들 중에 10을 사용하고 있기 때문에 삭제할 수 없다.
+-- DELETE에서 WHERE에 조건을 명시하지 않으면 데이터 전체를 삭제하기 때문에 반드시 조건을 명시해야 한다.
 DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 10;
 -- 삭제 가능, 자식 테이블의 행들 중에 30을 사용하고 있는 행이 없기 때문에 삭제가 가능하다.
 DELETE FROM MEMBER_GRADE WHERE GRADE_CODE = 30;
