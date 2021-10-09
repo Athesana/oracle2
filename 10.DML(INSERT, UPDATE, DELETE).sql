@@ -1,12 +1,12 @@
 /*
     <DML(Data Manipulation Language)>
-        데이터 조작 언어로 테이블의 값ㅇ르 삽입(INSERT) 하거나 수정(UPDATE), 삭제(DELETE) 하는 구문이다.
+        데이터 조작 언어로 테이블의 값을 삽입(INSERT) 하거나 수정(UPDATE), 삭제(DELETE) 하는 구문이다.
     
     <INSERT>
         테이블에 새로운 행을 추가하는 구문이다.
         
         [표현법]
-            1) INSERT IN TO 테이블명 VALUES(값, 값, 값, ...);
+            1) INSERT INTO 테이블명 VALUES(값, 값, 값, ...);
                 테이블에 모든 컬럼에 값을 INSERT 하고자 할 때 사용한다.
                 주의점> 컬럼의 순번을 지켜서 VALUES 값을 나열해야 한다.
             2) INSERT INTO 테이블명(컬럼명, 컬럼명, ...) VALUES(값, 값, ...);
