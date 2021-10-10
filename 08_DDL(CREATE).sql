@@ -159,6 +159,7 @@ INSERT INTO MEMBER VALUES('USER1', '1234', '아무개', DEFAULT);
 INSERT INTO MEMBER VALUES('USER1', '1234', '아무개', DEFAULT);
 
 DROP TABLE MEMBER;
+
 /*
 실습 중에는 제약조건 이름 설정할 때 RULE --> 테이블명_제약조건이걸려있는컬럼명_제약조건의약자
 */

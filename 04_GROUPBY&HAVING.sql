@@ -190,7 +190,7 @@ SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE
 WHERE SALARY > 3000000; -- 8명 조회
 
--- 1. UNION (반드시 컬럼 갯수를 맞춰줘야한다.)
+-- 1. UNION (반드시 컬럼 개수를 맞춰줘야한다.)
 -- EMPLOYEE 테이블에서 부서 코드가 D5인 사원 '또는' 급여가 300만원 초과인 사원 조회
 SELECT EMP_ID, EMP_NAME, DEPT_CODE, SALARY
 FROM EMPLOYEE

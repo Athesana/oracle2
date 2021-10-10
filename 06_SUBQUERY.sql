@@ -414,9 +414,11 @@ ORDER BY DEPT_CODE;
 SELECT ROWNUM, EMP_NAME, SALARY
 FROM EMPLOYEE;
 -- 순서 : FROM -> SELECT(순번이 정해진다.) -> ORDER BY
+-- 순위를 메길 때 이미 SELECT 때 결과가 만들어지기 때문에 결과값을 테이블대신 사용하고 SELECT 을 수행시키면서 내림차순으로 정렬된 행들에 ROWNUM을 사용해서 순번을 붙여서 원하는 결과로 만들어준다.
 
--- 해결 방법
+-- 해결 방법 <서브쿼리만들기>
 -- ORDER BY 한 결과값을 가지고 ROWNUM을 부여한다. (인라인 뷰 사용)
+-- 급여가 높은 순서대로 내림차순으로 정렬된 결과가 나온다.
 SELECT EMP_NAME, SALARY
 FROM EMPLOYEE
 ORDER BY SALARY DESC;
@@ -451,7 +453,7 @@ WHERE ROWNUM <= 3;
 
 -- SELECT에 AVG(NVL(SALARY,0) 이라고 적으면 여기에서 컬럼은 SALARY만 있지 이 자체를 컬럼명으로 인식하지 못한다. 따라서 이렇게 적으면 에러가 나는 것
 
--- 2-1) WITH를 이용한 방법
+-- 2-1) WITH를 이용한 방법 -- 서브쿼리에 TOPN_SAL라고 별칭을 붙여준 것
 WITH TOPN_SAL AS (
    SELECT NVL(DEPT_CODE, '부서없음') AS "DEPT_CODE", 
            AVG(NVL(SALARY,0)) AS "평균급여" 
