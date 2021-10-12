@@ -197,11 +197,144 @@ UPDATE EMPLOYEE
 SET DEPT_CODE = 'D0' -- - parent key not found 오류 = FOREIGN KEY 제약조건에 위배된다.
 WHERE EMP_NAME = '노옹철';
 
+SELECT * FROM EMP_SALARY;
 
+-- 방명수 사원의 급여와 보너스율을 유재석 사원과 동일하게 변경
+SELECT SALARY, BONUS
+FROM EMP_SALARY
+WHERE EMP_NAME = '유재식';
 
+-- 1) 단일행 서브쿼리를 각각의 컬럼에 적용
+UPDATE EMP_SALARY
+SET SALARY = (
+        SELECT SALARY
+        FROM EMP_SALARY
+        WHERE EMP_NAME = '유재식'
+    ),
+    BONUS = (
+        SELECT BONUS
+        FROM EMP_SALARY
+        WHERE EMP_NAME = '유재식'
+    )
+WHERE EMP_NAME = '방명수';
 
+SELECT * 
+FROM EMP_SALARY
+WHERE EMP_NAME = '방명수';
 
+ROLLBACK;
 
+-- 2) 다중열 서브 쿼리를 사용해서 SALARY, BONUS 컬럼을 한 번에 변경
+UPDATE EMP_SALARY
+SET (SALARY, BONUS) = (
+    SELECT SALARY, BONUS
+    FROM EMP_SALARY
+    WHERE EMP_NAME = '유재식'
+)
+WHERE EMP_NAME = '방명수';
 
+SELECT *
+FROM EMP_SALARY
+WHERE EMP_NAME = '방명수';
+
+ROLLBACK;
+
+-- 노옹철, 전형돈, 정중하, 하동운 사원들의 급여와 보너스를 유재식 사원과 동일하게 변경
+UPDATE EMP_SALARY
+SET (SALARY, BONUS) = (
+    SELECT SALARY, BONUS
+    FROM EMP_SALARY
+    WHERE EMP_NAME = '유재식'
+) -- 여기에서 실행하면 모든 사원 것이 유재식이랑 똑같이 업데이트 되어버림 따라서 WHERE 절에 조건 써야한다.
+-- WHERE EMP_NAME = '노옹철' OR EMP_NAME = '전형돈' OR EMP_NAME = '정중하' OR EMP_NAME = '하동운'; 
+WHERE EMP_NAME IN ('노옹철', '전형돈', '정중하', '하동운');
+
+SELECT *
+FROM EMP_SALARY;
+
+-- EMP_SALARY 테이블에서 아시아 지역에 근무하는 직원의 보너스를 0.3으로 변경
+-- 아시아 지역에 있는 직원들을 조회해보자.
+SELECT EMP_ID
+FROM EMPLOYEE E
+JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
+JOIN LOCATION L ON (D.LOCATION_ID = L.LOCAL_CODE)
+WHERE LOCAL_NAME LIKE 'ASIA%'; -- 19명 조회
+
+-- 서브 쿼리를 활용해서 변경해보자
+UPDATE EMP_SALARY
+SET BONUS = 0.3
+WHERE EMP_ID IN (
+    SELECT EMP_ID
+    FROM EMPLOYEE E
+    JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
+    JOIN LOCATION L ON (D.LOCATION_ID = L.LOCAL_CODE)
+    WHERE LOCAL_NAME LIKE 'ASIA%'
+);
+
+SELECT * FROM EMP_SALARY; -- 25개 행 업데이트
+
+/*
+    <DELETE>
+        테이블에 기록 된 데이터를 삭제하는 구문이다. (행 단위로 삭제한다.)
+        
+        [표현식]
+            DELETE FROM 테이블명
+            [WHERE 조건식]; 
+        - 생략 가능하지만 WHERE 절을 제시하지 않으면 테이블의 전체 행들이 삭제된다.
+*/
+
+COMMIT;
+
+-- 공유와 이산아 사원 행을 삭제해보자.
+DELETE FROM EMP_SALARY
+WHERE EMP_NAME = '공유';
+
+ROLLBACK; -- 마지막 커밋 시점으로 롤백된다.
+
+DELETE FROM EMP_SALARY
+WHERE EMP_NAME = '이산아';
+
+COMMIT;
+
+-- 커밋 되어버리면 롤백해도 되돌릴 수 없음.
+
+-- 제약 조건있으면 DELETE 안되는 것 테스트
+-- DEPARTMENT 테이블에서 DEPT_ID가 D1인 부서를 삭제 해보자
+DELETE FROM DEPARTMENT
+WHERE DEPT_ID = 'D1'; -- child record found 오류 // D1의 값을 참조하는 자식 테이블의 데이터가 있기 때문에 삭제가 되지 않는다.
+
+-- DEPARTMENT 테이블에서 DEPT_ID가 D3인 부서를 삭제 해보자
+DELETE FROM DEPARTMENT
+WHERE DEPT_ID = 'D3'; -- 정상적으로 행 삭제 완료(부모 테이블이라도 자식 테이블에서 참조하고 있는 행이 없으면 삭제 가능) // D3의 값을 참조하는 자식 테이블 데이터가 없기 때문에 삭제가 된다.
+
+SELECT * FROM DEPARTMENT;
+
+ROLLBACK;
+
+/*
+    <TRUNCATE>
+        테이블의 전체 행을 삭제할 때 사용하는 구문으로 DELETE보다 수행 속도가 더 빠르다.
+        별도의 조건 제시가 불가능하고 ROLLBACK이 불가능하다.
+        데이터가 있던 공간, 데이터, 메모리 까지 다 삭제된다. (** 조심해서 사용할 것 **)
+        
+        [표현법]
+            TRUNCATE TABLE 테이블명;
+*/
+
+SELECT * 
+FROM EMP_SALARY;
+
+SELECT *
+FROM DEPT_COPY;
+
+DELETE FROM EMP_SALARY;
+DELETE FROM DEPT_COPY;
+
+ROLLBACK;
+
+TRUNCATE TABLE EMP_SALARY; -- Table EMP_SALARY이(가) 잘렸습니다.
+TRUNCATE TABLE DEPT_COPY;
+
+ROLLBACK; -- ROLLBACK이 불가능하다.
 
 

@@ -39,3 +39,14 @@ GRANT RESOURCE, CONNECT TO KH;
 
 
 */
+
+-- 사용자 계정의 권한을 확인하는 구문
+-- ROLE을 집합으로 묶어놓은 것 = RESOURCE
+SELECT *
+FROM ROLE_SYS_PRIVS
+WHERE ROLE = 'RESOURCE';
+-- 아직 VIEW를 CREATE하는 ROLE은 없다.
+-- WHERE ROLE = 'CONNECT'; -- 데이터베이스에 접근할 수 있는 권한
+
+GRANT CREATE VIEW TO KH;
+
