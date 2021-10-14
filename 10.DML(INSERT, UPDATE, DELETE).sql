@@ -38,18 +38,20 @@ CREATE TABLE EMP_01 (
 );
 
 -- 전체 사원의 사번, 이름, 부서명을 조회하여 결과값을 EMP_01 테이블에 INSERT 한다. -- 서브 쿼리에 SELECT * 로 하면 "too many values" 오류, 위에 새로만든 테이블의 컬럼 3개 넣으면 25개 행이 삽입된다.
+-- <테이블명 다음에 컬럼명을 기재하지 않은 경우> 모든 컬럼에 대해서 조회했던 서브쿼리의 값을 테이블 틀 안에다가 넣어주는 것이다.
 INSERT INTO EMP_01 (
     SELECT EMP_ID, EMP_NAME, DEPT_TITLE
     FROM EMPLOYEE E
     LEFT OUTER JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
 );
-
+-- <테이블명 다음에 구체적인 컬럼을 지정해서 기재한 경우> 기재한 컬럼에 대해서만 넣고 싶다는 뜻이다. 1개부터 N개까지 가능한데, SELECT에 적은 컬럼 갯수와 타입이 일치해야한다.
+-- 단, NOT NULL 제약조건이라든지 제약조건이 걸려있으면 삽입이 안되고, 여기에서는 제약 조건은 따로 없기 때문에 지정되지 않은 컬럼값에는 NULL이 값으로 들어가게 된다. (계속 밑에 행 추가)
 INSERT INTO EMP_01 (EMP_ID, EMP_NAME) (
     SELECT EMP_ID, EMP_NAME
     FROM EMPLOYEE E
     LEFT OUTER JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
 );
--- 총 50개의 행이 조회 ***** 여기 다시 복습
+
 SELECT * FROM EMP_01; -- 부서가 없는 애들은 NULL로 해서 25행 조회
 
 DROP TABLE EMP_01;
@@ -71,11 +73,11 @@ DROP TABLE EMP_01;
                서브 쿼리;
 */
 
--- 표현법 1)번을 테이블을 만들자 (테이블 구조만 복사)
+-- 표현법 1)번을 테이블을 만들자 (테이블 구조만 복사) // 서브 쿼리에 사용되는 컬럼의 갯수와 INSERT에서 사용되는 컬럼의 갯수는 일치하지 않아도 된다. (각각 필요한 게 다르니까)
 CREATE TABLE EMP_DEPT
 AS SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE
    FROM EMPLOYEE
-   WHERE 1 = 0;
+   WHERE 1 = 0;   -- -> WHERE 조건절의 값이 FALSE여서 데이터는 들어가지 않고, 테이블의 구조만 복사가 된다.
 
 CREATE TABLE EMP_MANAGER
 AS SELECT EMP_ID, EMP_NAME, MANAGER_ID
@@ -83,9 +85,9 @@ AS SELECT EMP_ID, EMP_NAME, MANAGER_ID
    WHERE 1 = 0;
 
 -- EMP_DEPT 테이블에 EMPLOYE 테이블의 부서 코드가 D1인 직원의 사번, 이름, 부서 코드, 입사일을 삽입하고
--- EMP_MANAGER 테이블에 EMPLOYEE 테이블의 부서 코드가 D1인 직원의 사번, 이름, 관리자 사번을 조회해서 삽입한다.
+-- EMP_MANAGER 테이블에 EMPLOYEE 테이블의 "부서 코드가 D1인 직원"의 사번, 이름, 관리자 사번을 조회해서 삽입한다.
 -- 서브쿼리를 먼저 만들어보자.
-SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE, MANAGER_ID
+SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE, MANAGER_ID -- 우리가 2개의 테이블에 INSERT할 때 필요한 데이터들 모두 조회
 FROM EMPLOYEE
 WHERE DEPT_CODE = 'D1';
 
@@ -116,6 +118,7 @@ AS SELECT EMP_ID, EMP_NAME, HIRE_DATE, SALARY
 
 -- EMPLOYEE 테이블의 입사일 기준으로 2000년 1월 1일 이전에 입사한 사원의 정보는 EMP_OLD 테이블로, 2000년 1월 1일 이후에 입사한 사원의 정보는 EMP_NEW 테이블에 삽입한다.
 -- 서브쿼리를 작성해보자.
+-- 항상 서브쿼리가 먼저 실행되고 그 값을 가지고 조건에 맞는 컬럼들이 삽입된다.
 SELECT EMP_ID, EMP_NAME, HIRE_DATE, SALARY 
 FROM EMPLOYEE;
 

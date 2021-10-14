@@ -228,6 +228,12 @@ WHERE HIRE_DATE NOT BETWEEN '90/01/01' AND '01/01/01';
         '_' : 1글자
           ex) 비교대상컬럼 LIKE '_문자'  => 비교대상컬럼 값 중에 '문자'앞에 무조건 한 글자가 오는 모든 행을 조회
               비교대상컬럼 LIKE '__문자'  => 비교대상컬럼 값 중에 '문자'앞에 무조건 두 글자가 오는 모든 행을 조회
+              
+        SELECT [조회하고싶은값] FROM [테이블]
+        WHERE [컬럼] LIKE '%[이스케이프기호][와일드문자]%'ESCAPE'[이스케이프기호]';
+        
+        SELECT * FROM EMPLOYEE
+        WHERE JOB_ID LIKE '%@_%' ESCAPE '@';
 */
 
 -- EMPLOYEE 테이블에서 성이 전 씨인 사원의 사원명, 급여, 입사일 조회
