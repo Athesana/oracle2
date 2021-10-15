@@ -10,7 +10,8 @@
         - 선언부, 예외처리부는 생략 가능, 실행부는 반드시 작성해야 한다.
         - BEGIN 절 안에는 여러 쿼리문을 작성해도 된다. (JOIN 가능) : 코드가 실행되는 부분 (not like 조건문)
 */
-SET SERVEROUTPUT ON; -- 출력기능 활성화, 1번만 실행 시키면 된다.
+SET SERVEROUTPUT ON; 
+-- 출력기능 활성화, 1번만 실행 시키면 된다.
 
 BEGIN
     DBMS_OUTPUT.PUT_LINE('HELLO ORACLE!');
@@ -361,4 +362,206 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('부서명 : ' || DNAME);
 END;
 /
+/*
+        2-2) 반복문
+          1) BASIC LOOP
+            [표현법]
+                LOOP
+                    반복적으로 실행시킬 구문
+                    
+                    [반복문을 빠져나갈 조건문 작성]
+                     1) IF 조건식 THEN EXIT; END IF;
+                     2) EXIT WHEN 조건식;
+                END LOOP;
+*/
+-- 1 ~ 5까지 순차적으로 1씩 증가하는 값을 출력
+DECLARE
+    NUM NUMBER := 1;
+
+BEGIN
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+        
+        NUM := NUM + 1;
+        
+        IF NUM > 5 THEN
+            EXIT;
+        END IF;
+    END LOOP;
+END;
+/
+
+SET SERVEROUTPUT ON;
+
+-- 1 ~ 5 까지 순차적으로 1씩 증가하는 값을 출력
+DECLARE
+    NUM NUMBER := 1;
+BEGIN
+    WHILE NUM <= 5
+    LOOP
+     DBMS_OUTPUT.PUT_LINE(NUM);
+     NUM := NUM + 1;
+    END LOOP;
+END;
+/
+    
+    
+    
+-- 구구단 (2 ~ 9단) 출력
+DECLARE
+    DAN NUMBER := 2;
+    SU NUMBER;
+BEGIN
+    WHILE DAN <= 9
+    LOOP
+        SU := 1;
+        WHILE SU <= 9
+        LOOP
+            DBMS_OUTPUT.PUT_LINE(DAN || ' X ' || SU || ' = ' || DAN * SU);
+            
+            SU := SU + 1;
+        END LOOP;
+        DBMS_OUTPUT.PUT_LINE('');
+        DAN := DAN + 1;
+    END LOOP;
+END;
+/
+
+/*
+          3) FOR LOOP
+            [표현법]
+                FOR 변수 IN (REVERSE) 초기값..최종값
+                LOOP
+                    반복적으로 실행할 구문;
+                END LOOP;
+                
+*/
+-- 1~ 5까지 순차적으로 1씩 증가하는 값을 출력 (like JAVA for:each)
+BEGIN
+    FOR NUM IN 1..5
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+    END LOOP;
+END;
+/
+-- 역순으로 출력
+BEGIN
+    FOR NUM IN REVERSE 1..5
+    LOOP
+        DBMS_OUTPUT.PUT_LINE(NUM);
+    END LOOP;
+END;
+/
+
+-- 구구단(2 ~ 9단) 출력 (단, 짝수단만 출력한다.)
+BEGIN
+    FOR DAN IN 2..9
+    LOOP
+        IF (MOD(DAN, 2) = 0) THEN 
+            FOR SU IN 1..9
+            LOOP
+                DBMS_OUTPUT.PUT_LINE(DAN || ' X ' || SU || ' = ' || DAN * SU);
+            END LOOP;
+            
+            DBMS_OUTPUT.PUT_LINE('');
+        END IF;
+    END LOOP;
+END;
+/
+
+-- 반복문(FOR 구문)을 이용한 데이터 삽입
+CREATE TABLE TEST(
+    NUM NUMBER,
+    CREATE_DATE DATE
+);
+
+TRUNCATE TABLE TEST;
+SELECT * FROM TEST;
+
+-- TEST 테이블에서 10개의 행을 INSERT하는 PL/SQL 작성
+-- 홀수 번호의 행만 커밋, 짝수면 롤백
+BEGIN
+    FOR NUM IN 1..10
+    LOOP
+        INSERT INTO TEST VALUES(NUM, SYSDATE);
+        
+        IF(MOD(NUM, 2) = 1) THEN 
+            COMMIT;
+        ELSE 
+            ROLLBACK;
+        END IF;
+    END LOOP;
+    
+END;
+/
+/*
+    3) 예외처리부(EXCEPTION SECTION)
+        예외란 실행 중 발생하는 오류를 뜻하고 PL/SQL 문에서 발생한 예외를 예외처리부에서 코드적으로 처리가 가능하다.
+        
+        [표현법]
+            DECLARE
+            ...
+            BEGIN
+            ...
+            EXCEPTION
+                WHEN 예외명 1 THEN 예외처리구문 1;
+                WHEN 예외명 2 THEN 예외처리구문 2;
+                ...
+                WHEN OTHERS THEN 예외처리구문;
+                
+        * 지정된 예외 말고 모르는 예외가 발생할 경우에는 OTHERS 넣어주면 된다. OTHERS 하나만 넣으면 모든 오류에 대해서 퉁쳐서 다 처리된다.
+        * 오라클에서 미리 정의되어 있는 예외(시스템 예외)를 가지고 수행함
+            - NO_DATA_FOUND : SELECT 문의 수행 결과가 한 행도 없을 경우 발생한다.
+            - TOO_MANY_ROWS : 한 행이 리턴되어야하는데 SELECT 문에서 여러 개의 행을 반환할 때 발생한다.
+            - ZERO_DIVIDE : 숫자를 0으로 나눌 때 발생한다.
+            - DUP_VAL_ON_INDEX : UNIQUE 제약 조건을 가진 컬럼에 중복된 데이터가 INSERT 될 때 발생한다.
+*/
+-- 사용자가 입력한 수로 나눗셈 연산을 해보자. 0으로 입력할 때 ZERO_DIVIDE 발생하는지, 어떻게 처리하는지 실습
+DECLARE
+    RESULT NUMBER;
+BEGIN
+    RESULT := 10 / '&숫자';
+    DBMS_OUTPUT.PUT_LINE('결과 : ' || RESULT);
+EXCEPTION
+    WHEN ZERO_DIVIDE THEN DBMS_OUTPUT.PUT_LINE('나누기 연산시 0으로 나눌 수 없습니다.');
+END;
+/
+-- 0을 사용자가 입력하면 "divisor is equal to zero" 발생 -> EXCEPTION WHEN ZERO_DIVIDE THEN ~ 입력하면 지정한 출력구문으로 나온다.
+
+-- UNIQUE 제약조건을 위배시켜보자.
+-- 방명수 -> "unique constraint (%s.%s) violated" 발생 -> EXCEPTION WHEN DUP_VAL_ON_INDEX THEN ~ 입력하면 지정한 출력구문으로 나온다.
+BEGIN
+    UPDATE EMPLOYEE
+    SET EMP_ID = 200
+    WHERE EMP_NAME = '&이름';
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN DBMS_OUTPUT.PUT_LINE('이미 존재하는 사번입니다.');
+    WHEN OTHERS THEN DBMS_OUTPUT.PUT_LIN('오류가 발생했습니다. 관리자에게 문의해주세요.');
+END;
+/
+
+-- 너무 많은 행이 조회가 되었을 때
+-- "exact fetch returns more than requested number of rows" 발생
+-- 조회되는 데이터가 없을 때
+-- "no data found" 발생
+DECLARE
+    EID EMPLOYEE.EMP_ID%TYPE;
+    ENAME EMPLOYEE.EMP_NAME%TYPE;
+BEGIN
+    SELECT EMP_ID, EMP_NAME
+    INTO EID, ENAME
+    FROM EMPLOYEE
+    WHERE MANAGER_ID = '&사수번호';
+    
+    DBMS_OUTPUT.PUT_LINE('사번: ' || EID);
+    DBMS_OUTPUT.PUT_LINE('사원명 : ' || ENAME);
+    
+EXCEPTION
+    WHEN TOO_MANY_ROWS THEN DBMS_OUTPUT.PUT_LINE('너무 많은 행이 조회되었습니다.');
+    WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.PUT_LINE('조회 결과가 없습니다.');
+    WHEN OTHERS THEN DBMS_OUTPUT.PUT_LINE('오류가 발생했습니다.');
+END;
+/
+-- 사용자가 입력한 사수번호를 사수로 가지고 있는 직원 데이터를 조회할 건데, 1개의 행이 조회되면 INTO~ 에 담길 수 있지만, 
+-- 한 개의 결과가 아니라 여러 개의 결과(내가 입력한 사수번호를 사수로 가지고 있는 사원이 여러 명인 것)를 INTO ~ 한 행에 담을 수 없기 때문에 에러가 발생한다.
 
