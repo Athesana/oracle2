@@ -157,6 +157,17 @@ ORDER BY DEPT_CODE;
 /*
     <GROUPING>
       ROULLUP이나 CUBE에 의해 산출된 값이 해당 컬럼의 집합에 산출물이면 0을 반환, 아니면 1을 반환하는 함수
+      
+      1. GROUPING 함수
+   - ROLLUP 또는 CUBE 함수를 사용한 GROUP BY 절에 그룹화 대상으로 지정된 열이 그룹화된 상태로 결과가 집계되었는지 확인하는 데 사용. GROUP BY 절에 명시된 열 중 하나를 지정
+   - 출력 값이 0인 경우 GROUPING 함수에 지정한 열이 그룹화 된 것
+   - 출력 값이 1인 경우 그룹화 되지 않은 것
+   - 출력 값이 0과 1이므로 DECODE 함수를 통해 결과를 표기할 수 있음
+   
+      2. GROUPING_ID 함수
+   - 기본형 SELECT [] GROUPING_ID [그룹화 여부를 확인할 열(여러 개 지정 가능)] FROM [] WHERE [] GROUP BY ROLLUP 또는 CUBE [그룹화 할 열]
+   - GROUPING 함수처럼 특정 열의 그룹화 여부를 출력. 검사할 열을 여러 개 지정 가능
+   - 각 열의 그룹화 유무에 따라 0과 1이 결과값으로 순서대로 출력되고, 해당 값을 2진수로 보고 10진수로 바꾼 값을 출력
 */
 SELECT DEPT_CODE, 
        JOB_CODE, 
