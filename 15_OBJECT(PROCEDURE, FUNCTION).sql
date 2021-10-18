@@ -12,7 +12,7 @@
                 매개변수 2 [IN|OUT] 데이터타입 [ := DEFAULT 값],
                 ...
             )
-            IS
+            IS [AS]
                 선언부
             BEGIN
                 실행부
@@ -137,7 +137,7 @@ EXEC SELECT_EMP_ID('&사번', :VAR_EMP_NAME, :VAR_SALARY, :VAR_BONUS);
                 ...
             }
             RETURN 데이터타입
-            IS
+            IS [AS]
                 선언부
             BEGIN
                 실행부
@@ -190,3 +190,196 @@ WHERE BONUS_CALC(EMP_ID) > 40000000
 ORDER BY BONUS_CALC(EMP_ID) DESC;
 
 SET SERVEROUTPUT ON;
+
+-------------------------------------------------------------------------------------------
+/*
+    <CURSOR>
+        SQL 문의 처리결과 (처리 결과가 여러 행 (ROW))를 담고 있는 객체이다.
+        커서 사용 시 여러 행으로 나타난 처리 결과에 순차적으로 접근이 가능하다.
+        
+        * 커서의 종류
+        묵시적 커서 / 명시적 커서 두 종류가 존재한다.
+        
+        * 커서 속성 (묵시적 커서의 경우 커서명은 SQL로 사용된다.)
+         - 커서명%NOTFOUND : 커서 영역에 남아있는 ROW 수가 없으면 TRUE, 있으면 FALSE
+         - 커서명%FOUND    : 커서 영역에 남아있는 ROW 수가 1개 이상 있으면 TRUE, 아니면 FALSE
+         - 커서명%ISOPEN   : 커서가 OPEN 상태인 경우 TRUE 아니면 FALSE (묵시적 커서는 항상 FALSE)
+         - 커서명%ROWCOUNT : SQL 처리 결과로 얻어온 행(ROW) 수
+         
+         1) 묵시적 커서
+          - 오라클에서 자동으로 생성되어 사용하는 커서이다.
+          - PL/SQL 블록에서 SQL문을 실행 시마다 자동으로 만들어져서 사용된다.
+          - 사용자는 생성 유무를 알 수 없지만, 커서 속성을 활용하여 커서의 정보를 얻어올 수 있다.
+*/
+
+SET SERVEROUTPUT ON;
+
+-- BONUS가 NULL인 사원의 BONUS를 0으로 수정
+-- 몇 행이 수정되었는지 ROWCOUNT로 가져와보자
+SELECT * FROM EMPLOYEE;
+COMMIT;
+
+BEGIN
+    UPDATE EMPLOYEE
+    SET BONUS = 0
+    WHERE BONUS IS NULL;
+    
+    -- 묵시적 커서 사용(ROWCOUNT)
+    DBMS_OUTPUT.PUT_LINE(SQL%ROWCOUNT || '행 수정됨');
+END;
+/
+
+ROLLBACK;
+
+/*
+         2) 묵시적 커서
+           - 사용자가 직접 선언해서 사용할 수 있는 커서이다.
+           
+         [사용방법]
+          1) CURSOR 커서명 IS ..        : 커서 선언
+          2) OPEN 커서명;               : 커서 오픈
+          3) FETCH 커서명 INTO 변수 ...  : 커서에서 데이터 추출(한 행씩 데이터를 가져온다.)
+          4) CLOSE 커서명               : 커서 닫기(메모리 정리도 된다.)
+          
+         [표현법]
+            CURSOR 커서명 IS [SELECT문 서브쿼리로 작성]
+            
+            OPEN 커서명;
+            FETCH 커서명 INTO 변수;
+            ...
+            CLOSE 커서명;
+*/
+-- 급여가 30000000 이상인 사원의 사번, 이름, 급여 출력(PL/SQL 구문으로)
+DECLARE
+    EID EMPLOYEE.EMP_ID%TYPE;
+    ENAME EMPLOYEE.EMP_NAME%TYPE;
+    SAL EMPLOYEE.SALARY%TYPE;
+    
+    CURSOR C1 IS -- 커서 선언(서브 쿼리를 갖고만 있는다. 실행은 아직 NOPE!)
+        SELECT EMP_ID, EMP_NAME, SALARY
+        FROM EMPLOYEE
+        WHERE SALARY > 3000000;
+BEGIN
+    OPEN C1; -- 커서 오픈
+    
+    LOOP
+        -- 서브 쿼리의 결과에서 한 행씩 차례대로 데이터를 가져와서 순서대로 변수에 담아준다.
+        FETCH C1 INTO EID, ENAME, SAL;
+        
+        EXIT WHEN C1%NOTFOUND; -- LOOP를 빠져나올 조건문 TRUE가 반환되면 종료
+        
+        DBMS_OUTPUT.PUT_LINE(EID || ' ' || ENAME || ' ' || SAL);
+    END LOOP;
+    
+    CLOSE C1; -- 커서 종료
+END;
+/
+
+-- 전체 부서에 대해 부서 코드, 부서명, 지역 조회(PROCEDURE)
+CREATE OR REPLACE PROCEDURE CURSOR_DEPT
+IS
+    V_DEPT DEPARTMENT%ROWTYPE; -- 타입 변수 만들기
+    
+    CURSOR C1 IS
+        SELECT * FROM DEPARTMENT;
+BEGIN
+    OPEN C1;
+    
+    LOOP
+        FETCH C1 INTO V_DEPT.DEPT_ID, V_DEPT.DEPT_TITLE, V_DEPT.LOCATION_ID;
+        
+        EXIT WHEN C1%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE('부서 코드 : ' || V_DEPT.DEPT_ID || ', 부서명 : ' || V_DEPT.DEPT_TITLE || ', 지역 : ' || V_DEPT.LOCATION_ID);
+    END LOOP;
+    
+    CLOSE C1;
+END;
+/
+
+SELECT * FROM DEPARTMENT; -- 서브쿼리 만들기
+
+-- Procedure CURSOR_DEPT이(가) 컴파일되었습니다.
+-- 실행 구문 만들기
+EXEC CURSOR_DEPT;
+
+--FOR IN LOOP를 이용한 커서 사용 (같은 이름으로 만들어도 에러 안나고 REPLACE가 될 것) (OPEN, FETCH, CLOSE 생략)
+CREATE OR REPLACE PROCEDURE CURSOR_DEPT
+IS
+    V_DEPT DEPARTMENT%ROWTYPE; -- 변수 선언, 해당하는 값을 저장할수도, 읽어올수도 있다.
+
+--   CURSOR C1 IS
+--      SELECT * FROM DEPARTMENT;
+BEGIN
+-- LOOP 시작 시 자동으로 커서를 생성(선언)하고 커서를 OPEN한다.
+-- 반복할 때마다 FETCH도 자동으로 실행된다.
+-- LOOP 종료 시 자동으로 커서가 CLOSE 된다.
+--    FOR V_DEPT IN C1
+    FOR V_DEPT IN (SELECT * FROM DEPARTMENT)
+    LOOP
+        DBMS_OUTPUT.PUT_LINE('부서 코드 : ' || V_DEPT.DEPT_ID || ', 부서명 : ' || V_DEPT.DEPT_TITLE || ', 지역 : ' || V_DEPT.LOCATION_ID);
+    END LOOP;
+END;
+/
+
+EXEC CURSOR_DEPT; 
+-- 위의 예제랑 동일한 출력 결과물이 나온다. (EXEC 랑 같은 행에 주석 달면 에러남)
+
+------------------------------------------------------------------------------------------
+/*
+    <PAKCAGE>
+        프로시저와 함수를 효율적으로 관리하기 위해 묶는 단위로 패키지는 선언부, 본문(BODY)으로 나눠진다.
+*/
+-- 1) 패키지 선언부에 변수, 상수 선언 및 사용법
+CREATE OR REPLACE PACKAGE TEST_PACKAGE
+IS
+    NAME VARCHAR2(20); -- 변수
+    PI CONSTANT NUMBER := 3.14; -- 상수
+END;
+/
+
+-- 패키지에 선언된 변수, 상수 사용
+BEGIN
+    TEST_PACKAGE.NAME := '홍길동';
+    
+    DBMS_OUTPUT.PUT_LINE('이름 : ' || TEST_PACKAGE.NAME);
+    DBMS_OUTPUT.PUT_LINE('PI : ' || TEST_PACKAGE.PI);
+END;
+/
+-- 2) 패키지 선언부에 프로시저, 함수, 커서 및 사용 방법
+CREATE OR REPLACE PACKAGE TEST_PACKAGE
+IS
+    NAME VARCHAR2(20); -- 변수
+    PI CONSTANT NUMBER := 3.14; -- 상수
+    PROCEDURE SHOW_EMP;
+END;
+/
+EXEC TEST_PACKAGE.SHOW_EMP;
+-- not executed, package body "KH.TEST_PACKAGE" does not exist 에러 발생 (실제 구현 부분인 BODY가 없어서, 따라서 패키지 BODY 부분을 생성해야 한다.)
+
+-- 패키지 본문 생성
+CREATE OR REPLACE PACKAGE BODY TEST_PACKAGE
+IS
+    PROCEDURE SHOW_EMP
+    IS
+        V_EMP EMPLOYEE%ROWTYPE;
+    BEGIN
+        FOR V_EMP IN (SELECT EMP_ID, EMP_NAME, EMP_NO FROM EMPLOYEE)
+        LOOP
+            DBMS_OUTPUT.PUT_LINE('사번 : ' || V_EMP.EMP_ID || ', 이름 : ' || V_EMP.EMP_NAME ||  ', 주민번호: ' || V_EMP.EMP_NO);
+        END LOOP;
+    END;
+END;
+/
+
+
+
+
+
+
+
+
+
+
+
+
