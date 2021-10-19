@@ -9,10 +9,12 @@
             1) INSERT INTO 테이블명 VALUES(값, 값, 값, ...);
                 테이블에 모든 컬럼에 값을 INSERT 하고자 할 때 사용한다.
                 주의점> 컬럼의 순번을 지켜서 VALUES 값을 나열해야 한다.
+                
             2) INSERT INTO 테이블명(컬럼명, 컬럼명, ...) VALUES(값, 값, ...);
                 테이블에 내가 선택한 컬럼에 대한 값만 INSERT 하고자 할 때 사용한다.
                 선택되지 않은 컬럼들은 기본적으로 NULL 값이 들어간다.(NOT NULL 제약조건이 걸려있는 컬럼은 반드시 선택해서 값을 제시해야 한다.)
                 단, 기본 값(DEFAULT)이 지정되어 있으면 NULL이 아닌 기본 값이 들어간다.
+                
             3) INSERT INTO 테이블명 (서브 쿼리);
                 VALUES 대신해서 서브 쿼리로 조회한 결과값을 통채로 INSERT한다. (즉, 여러 행을 INSERT 시킬 수 있다.)
                 서브 쿼리의 결과값이 INSERT문에 지정된 컬럼의 개수와 데이터 타입이 같아야 한다.
@@ -58,7 +60,7 @@ DROP TABLE EMP_01;
 
 /*
     <INSERT ALL>
-        두 개 이상의 테이블에 INSERT 하는데 동일한 서브 쿼리가 사용되는 경우에 INSERT ALL을 사용해서 여러 테이블에 한 번에 데이터 삽입이 가능하다.
+        두 개 이상의 테이블에 INSERT 하는데 '동일한 서브 쿼리가 사용'되는 경우에 INSERT ALL을 사용해서 여러 테이블에 한 번에 데이터 삽입이 가능하다.
         
         [표현법]
             1) INSERT ALL
@@ -77,7 +79,7 @@ DROP TABLE EMP_01;
 CREATE TABLE EMP_DEPT
 AS SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE
    FROM EMPLOYEE
-   WHERE 1 = 0;   -- -> WHERE 조건절의 값이 FALSE여서 데이터는 들어가지 않고, 테이블의 구조만 복사가 된다.
+   WHERE 1 = 0;   -- -> WHERE 조건절의 값이 FALSE여서 데이터는 복사되어 들어가지 않고, 테이블의 구조(데이터 타입)만 복사가 된다.
 
 CREATE TABLE EMP_MANAGER
 AS SELECT EMP_ID, EMP_NAME, MANAGER_ID
@@ -97,9 +99,9 @@ INTO EMP_DEPT VALUES(EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE)
 INTO EMP_MANAGER VALUES(EMP_ID, EMP_NAME, MANAGER_ID)
     SELECT EMP_ID, EMP_NAME, DEPT_CODE, HIRE_DATE, MANAGER_ID
     FROM EMPLOYEE
-    WHERE DEPT_CODE = 'D1';  -- 8개 행이 삽입된다.
+    WHERE DEPT_CODE = 'D1';  -- 8개 행이 삽입된다. 4개의 데이터들이 각각의 컬럼에 맞게 (4개 컬럼, 3개 컬럼) 삽입된다.
 
-SELECT * FROM EMP_DEPT;
+SELECT * FROM EMP_DEPT; 
 SELECT * FROM EMP_MANAGER;
 
 DROP TABLE EMP_DEPT;
@@ -227,7 +229,7 @@ WHERE EMP_NAME = '방명수';
 
 ROLLBACK;
 
--- 2) 다중열 서브 쿼리를 사용해서 SALARY, BONUS 컬럼을 한 번에 변경
+-- 2) 다중열 서브 쿼리(행은 하나인데 컬럼이 여러 개)를 사용해서 SALARY, BONUS 컬럼을 한 번에 변경 - > 쌍으로 묶기
 UPDATE EMP_SALARY
 SET (SALARY, BONUS) = (
     SELECT SALARY, BONUS
@@ -256,7 +258,7 @@ SELECT *
 FROM EMP_SALARY;
 
 -- EMP_SALARY 테이블에서 아시아 지역에 근무하는 직원의 보너스를 0.3으로 변경
--- 아시아 지역에 있는 직원들을 조회해보자.
+-- 아시아 지역에 있는 직원들의 사번만 조회해보자. (다중 행 서브쿼리)
 SELECT EMP_ID
 FROM EMPLOYEE E
 JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
@@ -284,6 +286,7 @@ SELECT * FROM EMP_SALARY; -- 25개 행 업데이트
             DELETE FROM 테이블명
             [WHERE 조건식]; 
         - 생략 가능하지만 WHERE 절을 제시하지 않으면 테이블의 전체 행들이 삭제된다.
+        - FOREIGN KEY 제약조건이 설정되어 있는 경우 참조되고 있는 값에 대해서는 삭제가 불가능하다.
 */
 
 COMMIT;
@@ -299,7 +302,7 @@ WHERE EMP_NAME = '이산아';
 
 COMMIT;
 
--- 커밋 되어버리면 롤백해도 되돌릴 수 없음.
+-- 커밋 되어버리면 커밋 이전에 작업했던 내용은 롤백해도 되돌릴 수 없음. 마지막 커밋 기준 - 커밋 사이에 있던 내용을 실제 데이터베이스에 반영, 저장하기 때문에
 
 -- 제약 조건있으면 DELETE 안되는 것 테스트
 -- DEPARTMENT 테이블에서 DEPT_ID가 D1인 부서를 삭제 해보자
@@ -317,8 +320,9 @@ ROLLBACK;
 /*
     <TRUNCATE>
         테이블의 전체 행을 삭제할 때 사용하는 구문으로 DELETE보다 수행 속도가 더 빠르다.
-        별도의 조건 제시가 불가능하고 ROLLBACK이 불가능하다.
-        데이터가 있던 공간, 데이터, 메모리 까지 다 삭제된다. (** 조심해서 사용할 것 **)
+        DELETE - 원하는 데이터만 골라서 삭제, 행을 하나하나 삭제, 데이터가 남아있던 공간은 지워지지 않고 남아있는다
+        TRUNCATE - 전체 데이터를 한 번에 지운다. 데이터가 있던 물리적인 공간, 데이터, 메모리 까지 다 삭제된다. (** 조심해서 사용할 것 **)
+        별도의 조건 제시가 불가능하고 ROLLBACK이 불가능하다. (자동으로 COMMIT 되는 명령어) 모든 데이터를 삭제하고 컬럼만 남겨둔다.
         
         [표현법]
             TRUNCATE TABLE 테이블명;

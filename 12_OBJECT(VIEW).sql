@@ -2,11 +2,14 @@
     <VIEW(뷰)>
         SELECT 문을 저장할 수 있는 객체이다. (논리적인 가상 테이블)
         데이터를 저장하고 있지 않으며 테이블에 대한 SQL만 저장되어 있어 VIEW에 접근할 때 SQL문을 수행하면서 결과 값을 가져온다.
+        데이터를 가지고 있는 것이 아니라 쿼리를 가지고, 쿼리를 수행한 결과를 가지고 와서 테이블처럼 사용한다.
         OR PLEACE -> 기존 중복되는 뷰가 있으면 쿼리만 바꿔주고 없으면 새로 생성한다.
         
         [표현법]
             CREATE [OR REPLACE] VIEW 뷰명
             AS 서브 쿼리;
+            
+        - 사용자계정생성.sql 파일에서 GRANT CREATE VIEW TO KH; 했음
 */
 -- '한국'에서 근무하는 사원의 사번, 이름, 부서명, 급여, 근무 국가명을 조회하시오.
 SELECT E.EMP_ID, E.EMP_NAME, D.DEPT_TITLE, E.SALARY, N.NATIONAL_NAME
@@ -25,7 +28,7 @@ AS  SELECT E.EMP_ID, E.EMP_NAME, D.DEPT_TITLE, E.SALARY, N.NATIONAL_NAME
     JOIN LOCATION L ON (D.LOCATION_ID = L.LOCAL_CODE)
     JOIN NATIONAL N ON (L.NATIONAL_CODE = N.NATIONAL_CODE);
     
-SELECT * FROM V_EMPLOYEE; -- 22행 출력, 가상 테이블로 실제 데이터가 담겨있는 것은 아니다.    
+SELECT * FROM V_EMPLOYEE; -- FROM에 뷰 이름을 적기. 22행 출력, 가상 테이블로 실제 데이터가 담겨있는 것은 아니다.    
 
 -- 한국에서 근무하는 사원의 사번, 이름, 부서명, 급여, 근무 국가명을 조회하시오.
 SELECT * 
@@ -62,7 +65,7 @@ AS SELECT EMP_ID,
 
 SELECT * FROM V_EMP_01;
 
-CREATE OR REPLACE VIEW V_EMP02 (사번, 이름, 성별, 근무년수) -- 서브 쿼리 안에 갯수와 별칭 갯수 맞춰야 한다. 별칭에 "" 붙여서 해도 된다.
+CREATE OR REPLACE VIEW V_EMP02 (사번, 이름, 성별, 근무년수) -- 모든 컬럼에 별칭을 부여해야 한다. 서브 쿼리 안에 갯수와 별칭 갯수 맞춰야 한다. 별칭에 "" 붙여서 해도 된다.
 AS SELECT EMP_ID,
           EMP_NAME,
           DECODE(SUBSTR(EMP_NO, 8, 1), '1', '남', '2', '여'),
@@ -127,9 +130,11 @@ AS  SELECT JOB_CODE
 
 -- INSERT
 
-INSERT INTO VM_JOB2 VALUES('J8', '알바');
-INSERT INTO VM_JOB2 VALUES('J8');
+INSERT INTO VM_JOB2 VALUES('J8', '알바'); -- 에러
+INSERT INTO VM_JOB2 VALUES('J8'); -- 가능 
 
+SELECT * FROM VM_JOB2; -- J8이 삽입되어 있다.
+SELECT * FROM JOB;  -- 대신 JOB_CODE에는 J8 들어가고 JOB_NAME에는 NULL이 들어간다.
 -- UPDATE
 
 UPDATE VM_JOB2
@@ -138,21 +143,22 @@ WHERE JOB_CODE = 'J8';  -- JOB_CODE만 가지고 정의해놓고 JOB_NAME을 업
 
 UPDATE VM_JOB2
 SET JOB_CODE = 'J0'
-WHERE JOB_CODE = 'J8';
+WHERE JOB_CODE = 'J8'; -- 가능
 
 -- DELETE
 DELETE FROM VM_JOB2
-WHERE JOB_NAME = '사원';
+WHERE JOB_NAME = '사원'; -- "invalid identifier" 에러 발생
 
 DELETE FROM VM_JOB2
-WHERE JOB_CODE = 'J0';
+WHERE JOB_CODE = 'J0';  -- 가능
 
 ROLLBACK;
 
 SELECT * FROM VM_JOB2;
 SELECT * FROM JOB;   -- JOB_CODE에는 J8이 들어가지만 JOB_NAME에는 기본적으로 NULL이 삽입된다.
 
--- 2) 뷰에 포함되지 않는 컬럼 중에 기본 테이블 상에 NOT NULL 제약 조건이 지정된 경우
+-- 2) 뷰에 포함되지 않는 컬럼 중에 기본 테이블 상에 NOT NULL 제약 조건이 지정된 경우 -- UPDATE만 가능
+-- 정의된 컬럼만 가지고 작동하면 기본 테이블의 나머지 컬럼에는 NULL이 들어간다. 그럴 때 NULL이 들어갈 수 없는 제약조건이 걸린 컬럼에 INSERT는 에러가 발생한다.
 CREATE OR REPLACE VIEW V_JOB3
 AS SELECT JOB_NAME
    FROM JOB;
@@ -164,9 +170,9 @@ INSERT INTO V_JOB3 VALUES('알바'); -- "too many values" / '알바'만 하려�
 -- UPDATE
 UPDATE V_JOB3
 SET JOB_NAME = '인턴'
-WHERE JOB_NAME = '사원'; -- VIEW에 있는 컬럼을 가지고 변경하는 것이기 때문에 가능!
+WHERE JOB_NAME = '사원'; -- VIEW에 있는 JOB_NAME 컬럼 1개를 가지고 변경하는 것이기 때문에 가능!
 
--- DELETE (FK 제약조건으로 인해서 삭제되지 않는다.)
+-- DELETE (FK 제약조건으로 인해서 삭제되지 않는다.) (제약조건이 없다면 삭제된다.)
 DELETE FROM V_JOB3
 WHERE JOB_NAME = '인턴'; -- child record found, integrity constraint (KH.EMPLOYEE_JOB_CODE_FK) violated - child record found
 
@@ -176,6 +182,7 @@ SELECT * FROM JOB;
 ROLLBACK;  -- 인턴 -> 사원으로 다시 바꿈
 
 -- 3) 산술 표현식으로 정의된 경우
+-- 사원들의 연봉을 조회하는 뷰를 만들자.
 CREATE OR REPLACE VIEW V_EMP_SAL
 AS SELECT EMP_ID, 
           EMP_NAME, 
@@ -191,10 +198,10 @@ INSERT INTO V_EMP_SAL VALUES (800, '홍길동', 3000000, 36000000); -- "virtual 
 
 -- UPDATE
 UPDATE V_EMP_SAL
-SET "연봉" = 80000000
+SET "연봉" = 80000000 -- "연봉" 이라는 컬럼은 가상 컬럼이야(물리적으로 존재하지 않고 연산으로 만들어진 컬럼) 이라서 이걸 수정할 수는 없다.
 WHERE EMP_ID = 200;   -- "virtual column not allowed here"
 
--- 산술연산과 무관한 컬럼은 변경 가능
+-- 산술연산과 무관한 컬럼은 변경 가능 (SALARY는 실제 있는 컬럼)
 UPDATE V_EMP_SAL
 SET SALARY = 5000000
 WHERE EMP_ID = 200;
@@ -209,12 +216,12 @@ WHERE "연봉" = 60000000;
 
 ROLLBACK;
 
--- 4) 그룹 함수나 GROUP BY 절을 포함한 경우
+-- 4) 그룹 함수나 GROUP BY 절을 포함한 경우 : 여러 개 값을 모아서 하나의 결과로 만든 것이기 때문에 (INSERT, UPDATE, DELETE를 모두 허용하지 않는다.)
 SELECT DEPT_CODE, SUM(SALARY), FLOOR(AVG(NVL(SALARY,0)))
 FROM EMPLOYEE
 GROUP BY DEPT_CODE;
 
-
+-- 별칭 필수!
 CREATE OR REPLACE VIEW V_DEPT
 AS SELECT DEPT_CODE, SUM(SALARY) 합계 , FLOOR(AVG(NVL(SALARY,0))) 평균
    FROM EMPLOYEE
@@ -238,7 +245,7 @@ WHERE DEPT_CODE = 'D1'; -- 총 합계를 바꾼다는건 각 직원들의 급여
 DELETE FROM V_DEPT
 WHERE DEPT_CODE = 'D1'; -- 에러 발생 / 그룹으로 묶었기 때문에 원본 테이블의 여러 개를 지워야 하는 상황이 발생하기 때문에 안된다.
 
--- 5) DISTINCT를 포함한 경우
+-- 5) DISTINCT를 포함한 경우 (INSERT, UPDATE, DELETE를 모두 허용하지 않는다.)
 CREATE OR REPLACE VIEW V_DT_JOB
 AS SELECT DISTINCT JOB_CODE
    FROM EMPLOYEE;
@@ -315,12 +322,12 @@ AS SELECT EMP_ID, EMP_NAME, SALARY
 SELECT * FROM USER_VIEWS WHERE VIEW_NAME = 'V_EMP01';
 
 -- 2) FORCE | NOFORCE 
--- NOFORCE (TT라는 테이블은 없기 때문에 "table or view does not exist" 에러, 생략해도 마찬가지)
+-- NOFORCE (TT라는 테이블은 없기 때문에 "table or view does not exist" 에러, NOFORCE가 기본값이라서 생략해도 마찬가지)
 CREATE OR REPLACE /* NOFORCE */ VIEW V_EMP02
 AS SELECT TCODE, TNAME, TCONTENT
    FROM TT;
 
--- FORCE (컴파일 오류 = "table or view does not exist" 와 함께 뷰가 생성되었습니다.)
+-- FORCE (명시적으로 적어야 한다. 컴파일 오류 = "table or view does not exist" 와 함께 뷰가 생성되었습니다.)
 CREATE OR REPLACE FORCE VIEW V_EMP02
 AS SELECT TCODE, TNAME, TCONTENT
    FROM TT;
@@ -338,6 +345,7 @@ CREATE TABLE TT(
 SELECT * FROM V_EMP02;
 
 -- 3) WITH CHECK OPTION
+-- 전체 직원 중 급여 300 이상인 사람 조회
 CREATE OR REPLACE VIEW V_EMP03
 AS SELECT *
    FROM EMPLOYEE
@@ -345,13 +353,15 @@ AS SELECT *
 WITH CHECK OPTION;
 
 SELECT * FROM V_EMP03;
-SELECT * FROM USER_VIEWS WHERE VIEW_NAME = 'V_EMP03';
+SELECT * FROM USER_VIEWS WHERE VIEW_NAME = 'V_EMP03'; -- WITH CHECK OPTION 적용한 후 조회해보는 딕셔너리
 
 -- 200 사원의 급여를 200만원으로 변경해보자. 
 -- <서브 쿼리 조건에 부합하지 않기 때문에 변경이 불가능>
 UPDATE V_EMP03
 SET SALARY = 2000000
-WHERE EMP_ID = 200; -- 엥? 200번 사원이 사라짐 / WITH CHECK OPTION 하고나서 다시 실행할 때는 에러 발생(view WITH CHECK OPTION where-clause violation)
+WHERE EMP_ID = 200; -- 엥? 200번 사원이 사라짐 / 왜냐 V_EMP03 뷰는 300이상인 사람만 나와있으니까 -> SELECT * FROM EMPLOYEE;로 조회해보면 200만원으로 바뀌어있다.
+-- WITH CHECK OPTION 하면 애초에 300만원 이상인 사람만 데이터로 가지게 V_EMP03 뷰를 만든건데
+-- 200만원으로 바꾸려고 하니까 이 옵션 설정한 뷰를 만들고나서 이 UPDATE를 다시 실행할 때는 에러 발생(view WITH CHECK OPTION where-clause violation)
 
 -- 200 사원의 급여를 200만원 이상의 값으로 변경해보자. 
 -- <서브 쿼리 조건에 부합하기 때문에 변경이 가능>

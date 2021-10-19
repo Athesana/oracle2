@@ -27,6 +27,7 @@
             저장점을 정의해두면 ROLLBACK 진행 할 때 전체 작업을 ROLLBACK 하는게 아니라 SAVEPOINT 까지의 일부만 롤백 한다.
                 SAVEPOINT 포인트명; -- 저장점 지정
                 ROLLBACK TO 포인트명; -- 해당 포인트 지점까지의 트랜잭션만 롤백한다. (앞에 COMMIT이 있어도 포인트명 적힌데 까지 돌아가서 ROLLBACK 된다.)
+                (그냥 ROLLBACK;은 최신 COMMIT까지 거슬러 올라가고, ROLLBACK TO 포인트명; 하면 거기까지만 거슬러 올라가고 COMMIT ~ SAVEPOINT까지는 롤백 안함)
 */
 CREATE TABLE EMP_01
 AS  SELECT EMP_ID, EMP_NAME, DEPT_TITLE
@@ -57,6 +58,7 @@ DELETE FROM EMP_01
 WHERE EMP_ID = 213;
 
 -- DDL 구문을 실행하는 순간 기존에 메모리 버퍼에 임시 저장된 변경 사항들이 무조건 DB에 반영된다.(COMMIT 시켜버린다.)
+-- 쿼리 작성시에 중간에 DDL 명령어 사용하는 거에 대해서 주의해서 작성할 것
 CREATE TABLE TEST(
     TID NUMBER
 );
@@ -69,23 +71,6 @@ ORDER BY EMP_ID;
 
 DROP TABLE TEST;
 DROP TABLE EMP_01;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

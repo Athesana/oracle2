@@ -28,6 +28,8 @@ MAXVALUE 310
 NOCYCLE
 NOCACHE;
 
+-- CYCLE 옵션으로 넣으면 300부터 시작해서 310에 도달하면 다시 300부터 시작인데, 값이 중복되서 저장되지 않기 때문에 인서트할 때마다 에러가 발생
+
 -- 현재 계정이 가지고 있는 시퀀스들에 대한 정보를 조회하는 데이터 딕셔너리 추가
 SELECT * FROM USER_SEQUENCES;
 
@@ -79,10 +81,17 @@ DROP SEQUENCE SEQ_EMPNO;
 CREATE SEQUENCE SEQ_EID
 START WITH 910;
 
+-- 시퀀스 사용 안하면 매번 이 쿼리를 실행시켜 봐야하고, 성능도 떨어진다.
+SELECT ROWNUM, EMP_ID
+FROM EMPLOYEE
+ORDER BY EMP_ID DESC;
+
 -- 매번 새로운 사번이 발생되는 시퀀스 사용
+-- 910 사원으로 홍길동 삽입
 INSERT INTO EMPLOYEE
 VALUES(SEQ_EID.NEXTVAL, '홍길동', '666666-6666666', 'HONG@KH.OR.KR', '01000001111', 'D2', 'J2', 5000000, 0.1, NULL, SYSDATE, NULL, DEFAULT);
 
+-- 911 사원으로 도깨비 삽입
 INSERT INTO EMPLOYEE
 VALUES(SEQ_EID.NEXTVAL, '도깨비', '666666-6666666', 'HONG@KH.OR.KR', '01000001111', 'D2', 'J2', 5000000, 0.1, NULL, SYSDATE, NULL, DEFAULT);
 
