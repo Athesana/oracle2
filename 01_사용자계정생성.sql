@@ -40,8 +40,36 @@ GRANT RESOURCE, CONNECT TO KH;
 
 */
 
+--------------------------------------------VIEW
+-- SYSTEM 계정으로 접속중...
+-- RESOURCE에서는 뷰를 만드는 권한은 없다. 따라서 뷰를 만드는 권한을 추가 시켜 줘야 한다.
+/*
+<GRANT RESOURCE, CONNECT TO ~> 
+SELECT *
+FROM ROLE_SYS_PRIVS
+WHERE ROLE = 'RESOURCE';
+를 기본으로 조회해보면
+CREATE SEQUENCE
+CREATE TRIGGER
+CREATE CLUSTER
+CREATE PROCEDURE
+CREATE TYPE
+CREATE OPERATOR
+CREATE TABLE
+CREATE INDEXTYPE
+이 있다.
+
+SELECT *
+FROM ROLE_SYS_PRIVS
+WHERE ROLE = 'CONNECT';
+를 기본으로 조회해보면
+CREATE SESSION
+이 나온다.
+ = 세션을 만들어서 접속할 수 있다.
+*/
+
 -- 사용자 계정의 권한을 확인하는 구문
--- ROLE을 집합으로 묶어놓은 것 = RESOURCE
+-- ROLE(권한)을 집합으로 묶어놓은 것 = RESOURCE
 SELECT *
 FROM ROLE_SYS_PRIVS
 WHERE ROLE = 'RESOURCE';

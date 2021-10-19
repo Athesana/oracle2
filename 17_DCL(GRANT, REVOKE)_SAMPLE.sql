@@ -1,3 +1,4 @@
+-- SAMPLE 계정으로 접속중...
 -- CREATE TABLE 권한이 없어서 오류 발생
 -- 3. 계정에서 테이블을 생성할 수 있는 CREATE TABLE 권한을 부여받기.
 CREATE TABLE TEST(
@@ -6,7 +7,7 @@ CREATE TABLE TEST(
 
 -- insufficient privileges 접속권한은 있지만 CREATE 권한은 없어서 다음과 같은 에러가 발생한다.
 
--- 본인이 소유하고 있는 테이블들은 바로 조작이 가능하다.
+-- 본인이 소유하고 있는 테이블들은 바로 조작이 가능하다. (조회, 삽입 가능)
 SELECT * FROM TEST;
 INSERT INTO TEST VALUES(1);
 
@@ -17,8 +18,10 @@ SELECT * FROM KH.EMPLOYEE; -- (앞에 '계정명.' 생략되면 )현재 계정�
 -- 6. KH.DEPARTMENT 테이블을 조회할 수 있는 권한 부여받기
 SELECT * FROM KH.DEPARTMENT;
 
--- 7. KH.DEPARTMENT 테이블에 데이터를 삽입 할 수 있는 권한 부엽다기
+-- 7. KH.DEPARTMENT 테이블에 데이터를 삽입 할 수 있는 권한 부여받기
 INSERT INTO KH.DEPARTMENT 
 VALUES ('D0', '개발부', 'L2');
 
 ROLLBACK;
+
+-- SYS에서 8번 수행하고 7번 다시 수행하려고 하면 에러 발생. 

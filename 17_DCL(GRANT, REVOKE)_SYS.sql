@@ -15,6 +15,7 @@
             GRANT 권한1, 권한2, ... TO 사용자계정명;
             REVOKE 권한1, 권한2, ... FROM 사용자계정명;
 */
+-- SYSTEM 계정으로 접속중...
 -- 1. 계정 생성
 CREATE USER SAMPLE IDENTIFIED BY SAMPLE;
 
@@ -42,6 +43,7 @@ ALTER USER SAMPLE QUOTA 2M ON SYSTEM;
     
     [표현법]
         GRANT 권한종류 ON 특정객체 TO 계정;
+        REVOKE 권한종류 ON 특정객체 FROM 계정;
 */
 
 -- 5. KH.EMPLOYEE 테이블을 조회할 수 있는 권한 부여 

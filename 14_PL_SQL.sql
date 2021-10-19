@@ -295,8 +295,8 @@ BEGIN
         GRADE := '고급';
     ELSIF (SAL >= 3000000) THEN
         GRADE := '중급';
-    ELSIF (SAL < 3000000) THEN
-  --ELSE
+    -- ELSIF (SAL < 3000000) THEN
+    ELSE
         GRADE := '초급';
     END IF;
     
@@ -306,6 +306,8 @@ END;
 -- SAL_GRADE 테이블을 활용해보자.
 -- 변수 만들어 놓은 것을 특정 SELECT 절 안에서 사용할 수 있다.
 -- 첫 번째 SELECT 절에서 담아놓은 변수를 가지고 다른 SELECT 절에서도 이용해서도 사용할 수 있다.
+-- BEGIN 구문 안에서 여러 개의 SELECT 사용이 가능하다.
+-- BEGIN SELECT로 값을 조회해서 DECLARE 변수에 담아준다.
 DECLARE
     SAL EMPLOYEE.SALARY%TYPE;
     GRADE SAL_GRADE.SAL_LEVEL%TYPE;

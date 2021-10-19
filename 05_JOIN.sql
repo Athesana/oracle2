@@ -148,7 +148,7 @@ SELECT E.EMP_ID, E.EMP_NAME, D.DEPT_TITLE, L.LOCAL_NAME
 FROM EMPLOYEE E, DEPARTMENT D, LOCATION L
 WHERE E.DEPT_CODE = D.DEPT_ID AND D.LOCATION_ID = L.LOCAL_CODE /*AND LOCAL_NAME = 'ASIA1' */;  -- 조건 추가 가능
 
--- ANSI 구문 (다중 JOIN은 순서가 매우 중요하다.) (조인되는 개수만큼 조인절을 추가해서 사용, 콤마(,)로 나열 불가)
+-- ANSI 구문 (다중 JOIN은 순서가 매우 중요하다.) (조인되는 개수만큼 조인절을 추가해서 사용, FROM에다가 콤마(,)로 나열 불가)
 SELECT E.EMP_ID, E.EMP_NAME, D.DEPT_TITLE, L.LOCAL_NAME
 FROM EMPLOYEE E
 JOIN DEPARTMENT D ON (E.DEPT_CODE = D.DEPT_ID)
@@ -209,7 +209,7 @@ INNER JOIN DEPARTMENT D ON E.DEPT_CODE = D.DEPT_ID;
 
 -- 1) LEFT [OUTER] JOIN : 두 테이블 중 왼편에 기술된 테이블의 컬럼을 기준으로 JOIN 을 진행한다.
 -- ANSI 구문
--- 23명 조회, 오른쪽에 있는 DEPARTMENT 테이블에 매칭되는 값이 없어도 부서코드가 없던 사원 (이오리, 하동운) 정보가 나오게 된다.
+-- 23명 조회, 오른쪽에 있는 DEPARTMENT 테이블에 매칭되는 값이 없어도 부서코드가 없던(DEPT_TITLE IS NULL) 사원 (이오리, 하동운) 정보가 나오게 된다.
 SELECT E.EMP_NAME, D.DEPT_TITLE, E.SALARY, E.SALARY * 12
 FROM EMPLOYEE E
 LEFT /*OUTER*/ JOIN DEPARTMENT D ON E.DEPT_CODE = D.DEPT_ID;
