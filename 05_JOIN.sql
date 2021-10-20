@@ -525,6 +525,7 @@ WHERE E.DEPT_CODE IS NOT NULL;
 -- ** BY T 답안 
 
 
+
 -- 10. 해외영업팀에 근무하는 직원들의 사원명, 직급명, 부서 코드, 부서명을 조회하시오. 3개 테이블 조인
 -- 오라클 구문
 SELECT E.EMP_NAME, J.JOB_NAME, D.DEPT_ID, D.DEPT_TITLE
