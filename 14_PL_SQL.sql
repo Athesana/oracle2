@@ -375,6 +375,8 @@ END;
                      1) IF 조건식 THEN EXIT; END IF;
                      2) EXIT WHEN 조건식;
                 END LOOP;
+                
+            - 조건문은 생략이 가능하지만, 생략할 경우 무한루프를 돌게된다.
 */
 -- 1 ~ 5까지 순차적으로 1씩 증가하는 값을 출력
 DECLARE
@@ -386,30 +388,42 @@ BEGIN
         
         NUM := NUM + 1;
         
-        IF NUM > 5 THEN
-            EXIT;
-        END IF;
+--      IF NUM > 5 THEN
+--          EXIT;
+--      END IF;
+        
+        EXIT WHEN NUM > 6;
+        
     END LOOP;
 END;
 /
 
 SET SERVEROUTPUT ON;
 
+/*
+          2) BASIC LOOP
+            [표현법]
+                WHILE 조건식
+                LOOP
+                    반복적으로 실행할 구문;
+                END LOOP;
+*/
+
 -- 1 ~ 5 까지 순차적으로 1씩 증가하는 값을 출력
 DECLARE
     NUM NUMBER := 1;
 BEGIN
-    WHILE NUM <= 5
+    WHILE (NUM <= 5)
     LOOP
      DBMS_OUTPUT.PUT_LINE(NUM);
+     
      NUM := NUM + 1;
     END LOOP;
 END;
 /
     
-    
-    
--- 구구단 (2 ~ 9단) 출력
+-- 구구단 (2 ~ 9단) 출력 (반복문을 중첩해서 사용한다.)
+-- 변수 2개를 선언해도 되고, 연산 값이 들어갈 변수 1개를 더 선언해도 되고 OR 출력하면서 연산시키기해도 되고
 DECLARE
     DAN NUMBER := 2;
     SU NUMBER;
@@ -437,6 +451,7 @@ END;
                     반복적으로 실행할 구문;
                 END LOOP;
                 
+            -- 반복할 횟수를 알고 있는 경우에 사용
 */
 -- 1~ 5까지 순차적으로 1씩 증가하는 값을 출력 (like JAVA for:each)
 BEGIN
@@ -480,8 +495,12 @@ CREATE TABLE TEST(
 TRUNCATE TABLE TEST;
 SELECT * FROM TEST;
 
+-- DML, TCL 들도 PL/SQL 문에서 사용이 가능합니다.
 -- TEST 테이블에서 10개의 행을 INSERT하는 PL/SQL 작성
+-- 갯수를 정했기 때문에 FOR문 사용 가능
 -- 홀수 번호의 행만 커밋, 짝수면 롤백
+-- 일단 INSERT해보고 인서트 한 NUM 값이 IF~~ 해당하면 COMMIT, 아니면 ROLLBACK;
+-- IF(MOD(NUM, 2) != 0) THEN
 BEGIN
     FOR NUM IN 1..10
     LOOP
@@ -513,9 +532,9 @@ END;
                 
         * 지정된 예외 말고 모르는 예외가 발생할 경우에는 OTHERS 넣어주면 된다. OTHERS 하나만 넣으면 모든 오류에 대해서 퉁쳐서 다 처리된다.
         * 오라클에서 미리 정의되어 있는 예외(시스템 예외)를 가지고 수행함
-            - NO_DATA_FOUND : SELECT 문의 수행 결과가 한 행도 없을 경우 발생한다.
-            - TOO_MANY_ROWS : 한 행이 리턴되어야하는데 SELECT 문에서 여러 개의 행을 반환할 때 발생한다.
-            - ZERO_DIVIDE : 숫자를 0으로 나눌 때 발생한다.
+            - NO_DATA_FOUND    : SELECT 문의 수행 결과가 한 행도 없을 경우 발생한다.
+            - TOO_MANY_ROWS    : 한 행이 리턴되어야하는데 SELECT 문에서 여러 개의 행을 반환할 때 발생한다.
+            - ZERO_DIVIDE      : 숫자를 0으로 나눌 때 발생한다.
             - DUP_VAL_ON_INDEX : UNIQUE 제약 조건을 가진 컬럼에 중복된 데이터가 INSERT 될 때 발생한다.
 */
 -- 사용자가 입력한 수로 나눗셈 연산을 해보자. 0으로 입력할 때 ZERO_DIVIDE 발생하는지, 어떻게 처리하는지 실습
